@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent">
+  <a href="https://replyze.chat/?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Replyze/.github/main/assets/logo-on-dark.png">
       <img src="https://raw.githubusercontent.com/Replyze/.github/main/assets/logo-on-light.png" alt="Replyze" height="48">
@@ -11,7 +11,7 @@
 
 A small, readable Python reference implementation of an AI customer support agent. It answers only from a folder of Markdown help articles and cites the section it used. It asks a clarifying question when one detail is missing. It hands the conversation to a person when it should: the visitor asks for one, is angry, wants a refund, disputes a charge, raises a legal or account-security issue, keeps getting answers that don't help, or asks something no article covers. Every turn returns a structured decision with a reason. It uses Claude through the official `anthropic` SDK and plain BM25 search, with no vector database, and the agent itself is six short modules you can read in 15 minutes and adapt.
 
-This repository is an educational agent you host yourself. The hosted product is Replyze: **[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=cta-top)** · [Live demo](https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=live-demo) · [Docs](https://github.com/Replyze/replyze)
+This repository is an educational agent you host yourself. The hosted product is Replyze: **[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent&utm_content=cta-top)** · [Live demo](https://replyze.chat/?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent&utm_content=live-demo) · [Docs](https://github.com/Replyze/replyze)
 
 A decision as `SupportAgent.reply()` returns it (token counts left out):
 
@@ -340,14 +340,14 @@ CI runs `pytest` and `support-agent eval --offline` on Python 3.10, 3.11, 3.12 a
 
 ## Running this in production
 
-This repository is a reference you run and maintain yourself. [Replyze](https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer) runs the same idea as a hosted service:
+This repository is a reference you run and maintain yourself. [Replyze](https://replyze.chat/?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent&utm_content=footer) runs the same idea as a hosted service:
 
 - The AI agent answers from your knowledge base: your help articles, pages of your website and files you upload.
 - When a visitor asks for a person, the conversation goes to your team in a shared inbox and the AI steps back. When nobody on the team is online, the visitor is told, and asked for an email address if you don't have one.
 - It works in a chat widget on your website and over email, WhatsApp and Telegram (Messenger and Instagram in beta), all in the same inbox.
 - Your team rates the AI's replies in the inbox, and visitors can rate them in the widget. Where a reply was wrong, someone writes the right answer, and the AI uses it the next time someone asks something similar.
 
-[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer) · [pricing](https://replyze.chat/pricing?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer)
+[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent&utm_content=footer) · [pricing](https://replyze.chat/pricing?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent&utm_content=footer)
 
 ## Related
 

@@ -29,7 +29,7 @@ dev = ["pytest>=8"]
 support-agent = "support_agent.cli:main"
 
 [project.urls]
-Homepage = "https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent"
+Homepage = "https://replyze.chat/?utm_source=github&utm_medium=referral&utm_campaign=ai-customer-support-agent"
 
 [tool.setuptools]
 packages = ["support_agent"]
