@@ -11,6 +11,8 @@
 
 A small, readable Python reference implementation of an AI customer support agent. It answers only from a folder of Markdown help articles and cites the section it used. It asks a clarifying question when one detail is missing. It hands the conversation to a person when it should: the visitor asks for one, is angry, wants a refund, disputes a charge, raises a legal or account-security issue, keeps getting answers that don't help, or asks something no article covers. Every turn returns a structured decision with a reason. It uses Claude through the official `anthropic` SDK and plain BM25 search, with no vector database, and the agent itself is six short modules you can read in 15 minutes and adapt.
 
+This repository is an educational agent you host yourself. The hosted product is Replyze: **[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=cta-top)** · [Live demo](https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=live-demo) · [Docs](https://github.com/Replyze/replyze)
+
 A decision as `SupportAgent.reply()` returns it (token counts left out):
 
 ```json
@@ -26,13 +28,13 @@ A decision as `SupportAgent.reply()` returns it (token counts left out):
 
 ## Contents
 
+[Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [Retrieval](#retrieval) ·
 [The decision](#the-decision) ·
 [When it hands off](#when-it-hands-off) ·
 [Why it doesn't make things up](#why-it-doesnt-make-things-up) ·
 [Visitor text is data](#visitor-text-is-data) ·
-[Quick start](#quick-start) ·
 [Use your own docs](#use-your-own-docs) ·
 [Evals](#evals) ·
 [HTTP endpoint](#http-endpoint) ·
@@ -41,6 +43,55 @@ A decision as `SupportAgent.reply()` returns it (token counts left out):
 [Project layout](#project-layout) ·
 [Known limits](#known-limits) ·
 [Running this in production](#running-this-in-production)
+
+## Quick start
+
+You need Python 3.10 or newer and a [Claude API key](https://platform.claude.com).
+
+```bash
+git clone https://github.com/Replyze/ai-customer-support-agent
+cd ai-customer-support-agent
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+cp .env.example .env               # then put your key in ANTHROPIC_API_KEY
+support-agent chat
+```
+
+It chats about Larkspur Outdoor, the made-up shop in [`examples/shop-docs`](examples/shop-docs). Try "Do you ship to Canada?", then "How long does it take?", then "I want a refund". `support-agent chat -v` also prints token usage, including `cache_read_input_tokens`.
+
+No key yet? `--offline` swaps Claude for a stand-in that copies the best-matching sentence from the top article, so you can try retrieval, the rules and the guards. It is not a language model. This is a real offline session:
+
+```text
+$ support-agent chat --offline
+docs: examples/shop-docs (29 sections) | model: offline stand-in (no API key, not a language model)
+Type a message. /reset starts over, /quit leaves.
+
+you> Do you ship to Canada?
+agent> We ship to all 50 US states, including Alaska and Hawaii, and to Canada.
+       [answer | answered | model] sources: shipping.md#where-we-ship
+
+you> How long does it take?
+agent> Shipping to Canada takes 5 to 10 business days.
+       [answer | answered | model] sources: shipping.md#delivery-times
+
+you> I want a refund, the boots are too small
+agent> Our team handles refunds, so I'm passing this conversation to them. They'll reply here.
+       [handoff | refund_request | rules]
+       note for the team: Rules matched: refund_request.
+       (Handed off: in production the AI goes quiet here and a person takes over.
+        Starting a new conversation.)
+```
+
+Use it from Python:
+
+```python
+from support_agent import KnowledgeBase, SupportAgent
+
+agent = SupportAgent(KnowledgeBase.from_folder("examples/shop-docs"), company="Larkspur Outdoor")
+decision = agent.reply("How much is express shipping?")
+print(decision.action, decision.reply, decision.citations)
+```
 
 ## How it works
 
@@ -132,55 +183,6 @@ The API has its own [citations](https://platform.claude.com/docs/en/build-with-c
 - The guards don't trust the model either: whatever the visitor talked it into, an invented figure, link or email address doesn't reach the chat.
 
 This is hygiene, not a guarantee. The [eval set](evals/cases.json) has injection cases; add the ones you see in your own chats.
-
-## Quick start
-
-You need Python 3.10 or newer and a [Claude API key](https://platform.claude.com).
-
-```bash
-git clone https://github.com/Replyze/ai-customer-support-agent
-cd ai-customer-support-agent
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-cp .env.example .env               # then put your key in ANTHROPIC_API_KEY
-support-agent chat
-```
-
-It chats about Larkspur Outdoor, the made-up shop in [`examples/shop-docs`](examples/shop-docs). Try "Do you ship to Canada?", then "How long does it take?", then "I want a refund". `support-agent chat -v` also prints token usage, including `cache_read_input_tokens`.
-
-No key yet? `--offline` swaps Claude for a stand-in that copies the best-matching sentence from the top article, so you can try retrieval, the rules and the guards. It is not a language model. This is a real offline session:
-
-```text
-$ support-agent chat --offline
-docs: examples/shop-docs (29 sections) | model: offline stand-in (no API key, not a language model)
-Type a message. /reset starts over, /quit leaves.
-
-you> Do you ship to Canada?
-agent> We ship to all 50 US states, including Alaska and Hawaii, and to Canada.
-       [answer | answered | model] sources: shipping.md#where-we-ship
-
-you> How long does it take?
-agent> Shipping to Canada takes 5 to 10 business days.
-       [answer | answered | model] sources: shipping.md#delivery-times
-
-you> I want a refund, the boots are too small
-agent> Our team handles refunds, so I'm passing this conversation to them. They'll reply here.
-       [handoff | refund_request | rules]
-       note for the team: Rules matched: refund_request.
-       (Handed off: in production the AI goes quiet here and a person takes over.
-        Starting a new conversation.)
-```
-
-Use it from Python:
-
-```python
-from support_agent import KnowledgeBase, SupportAgent
-
-agent = SupportAgent(KnowledgeBase.from_folder("examples/shop-docs"), company="Larkspur Outdoor")
-decision = agent.reply("How much is express shipping?")
-print(decision.action, decision.reply, decision.citations)
-```
 
 ## Use your own docs
 
@@ -297,6 +299,8 @@ What a real deployment also needs:
 | `SUPPORT_AGENT_COMPANY` | | The business name in the prompt |
 | `SUPPORT_AGENT_LOG` | `WARNING` | Log level |
 
+`claude-haiku-5-5` (Claude Haiku 5.5) is the fast, low-cost default for a chat. For harder judgment, set `claude-sonnet-5-5` or `claude-opus-5-5`; both take the same request, at a higher cost per reply. Run `support-agent eval` before and after you switch.
+
 The CLI reads a `.env` file in the folder you run it from; variables already set in your shell win. In code, `ClaudeDecider(model=..., effort=..., client=...)` and `SupportAgent(max_clarifying_questions=2, history_limit=12)` take the same settings.
 
 The request in [`claude.py`](support_agent/claude.py) follows the current Messages API: no `temperature` (Claude Haiku 5.5 rejects non-default sampling parameters), the effort level in `output_config`, and `stop_reason` checked before the content is read. The system prompt carries a `cache_control` breakpoint: it is identical for every visitor, so after the first request it is read from the [prompt cache](https://platform.claude.com/docs/en/build-with-claude/prompt-caching). The articles and the visitor's message change every turn, so they come after it and carry no breakpoint. If your prompt is shorter than the model's minimum cacheable length, the marker is silently ignored; `support-agent chat -v` shows `cache_read_input_tokens` so you can check.
@@ -322,6 +326,8 @@ tests/                pytest, no API key needed
 
 `pytest` runs 75 tests without a key. They use a fake client, and [`test_claude_request.py`](tests/test_claude_request.py) runs the real `anthropic` SDK against a local stub of the Messages API to check the exact request the live path sends.
 
+CI runs `pytest` and `support-agent eval --offline` on Python 3.10, 3.11, 3.12 and 3.13, with no API key.
+
 ## Known limits
 
 - **Search matches words, not meaning.** "Can I pay with bitcoin?" finds the payments article through "pay", but a question that shares no words with the right article finds nothing. Write articles in your customers' words, or replace `KnowledgeBase.search` with embeddings when this bites.
@@ -334,14 +340,14 @@ tests/                pytest, no API key needed
 
 ## Running this in production
 
-This repository is a reference you run and maintain yourself. [Replyze](https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent) runs the same idea as a hosted service:
+This repository is a reference you run and maintain yourself. [Replyze](https://replyze.chat/?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer) runs the same idea as a hosted service:
 
 - The AI agent answers from your knowledge base: your help articles, pages of your website and files you upload.
 - When a visitor asks for a person, the conversation goes to your team in a shared inbox and the AI steps back. When nobody on the team is online, the visitor is told, and asked for an email address if you don't have one.
 - It works in a chat widget on your website and over email, WhatsApp and Telegram (Messenger and Instagram in beta), all in the same inbox.
 - Your team rates the AI's replies in the inbox, and visitors can rate them in the widget. Where a reply was wrong, someone writes the right answer, and the AI uses it the next time someone asks something similar.
 
-[Sign up](https://client.replyze.chat/register?utm_source=github&utm_medium=ai-customer-support-agent) · [pricing](https://replyze.chat/pricing?utm_source=github&utm_medium=ai-customer-support-agent)
+[Create a free account](https://client.replyze.chat/register?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer) · [pricing](https://replyze.chat/pricing?utm_source=github&utm_medium=ai-customer-support-agent&utm_content=footer)
 
 ## Related
 
